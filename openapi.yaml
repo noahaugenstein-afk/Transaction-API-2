@@ -1,0 +1,186 @@
+openapi: 3.1.0
+info:
+  title: Lee Transaction Automation API
+  description: >
+    Auto-fills fillable PDF templates from a source document (lease, LOI, purchase
+    agreement). Two modes: (1) the known LA North/Ventura Commission Worksheet via
+    structured transaction JSON; (2) ANY uploaded template via field-label inference.
+  version: 1.1.0
+servers:
+  - url: https://REPLACE-WITH-YOUR-DOMAIN
+    description: Your deployed API (e.g. https://transaction-api-production.up.railway.app)
+paths:
+  /fill-commission-worksheet:
+    post:
+      operationId: fillCommissionWorksheet
+      summary: Fill the known Commission Worksheet from extracted transaction data.
+      description: >
+        For the LA North/Ventura Commission Worksheet. Send the transaction details
+        you extracted from the lease; returns a download_url for the completed PDF.
+        Seller/(Sub)Lessor = landlord side; Buyer/(Sub)Lessee = tenant side.
+      security: [{ApiKeyAuth: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: "#/components/schemas/FillRequest"}
+      responses:
+        "200":
+          description: Filled.
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/FillResponse"}
+  /inspect-template:
+    post:
+      operationId: inspectTemplate
+      summary: Upload any fillable PDF template and get its fields with inferred labels.
+      description: >
+        Use for templates other than the known worksheet. Returns a template_token
+        plus every field with a human-readable label (inferred from the printed text
+        nearest each field), type, and dropdown options. Read the labels, decide which
+        source value goes in each field, then call fillByFields.
+      security: [{ApiKeyAuth: []}]
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file: {type: string, format: binary}
+      responses:
+        "200":
+          description: Field list with labels.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  template_token: {type: string}
+                  field_count: {type: integer}
+                  labeled: {type: integer}
+                  fields:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        field_id: {type: string}
+                        page: {type: integer}
+                        type: {type: string}
+                        label: {type: string}
+                        options: {type: array, items: {type: string}}
+  /fill-by-fields:
+    post:
+      operationId: fillByFields
+      summary: Fill an uploaded template (by token) with an explicit field/value map.
+      description: >
+        After inspectTemplate, send the template_token plus {field_id: value}. For
+        checkboxes use the option value (often "/Yes"); for dropdowns use one listed
+        option exactly. Returns a download_url for the completed PDF.
+      security: [{ApiKeyAuth: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [template_token, values]
+              properties:
+                template_token: {type: string}
+                values:
+                  type: object
+                  additionalProperties: {type: string}
+                flatten: {type: boolean, default: true}
+      responses:
+        "200":
+          description: Filled.
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/FillResponse"}
+components:
+  securitySchemes:
+    ApiKeyAuth: {type: apiKey, in: header, name: X-API-Key}
+  schemas:
+    Party:
+      type: object
+      properties:
+        name: {type: string, description: Entity legal name}
+        company: {type: string}
+        prefix: {type: string, description: "Mr., Ms., Mrs., Miss"}
+        first_name: {type: string}
+        last_name: {type: string}
+        contact: {type: string}
+        email: {type: string}
+        phone: {type: string}
+        address: {type: string}
+        suite: {type: string}
+        city: {type: string}
+        state: {type: string}
+        zip: {type: string}
+    Broker:
+      type: object
+      properties:
+        name: {type: string}
+        company: {type: string, description: "e.g. Lee & Associates"}
+        side: {type: string}
+        license_id: {type: string}
+        commission_percent: {type: number}
+    PropertyInfo:
+      type: object
+      properties:
+        name: {type: string, description: Property / building name}
+        address: {type: string}
+        suite: {type: string}
+        city: {type: string}
+        state: {type: string}
+        zip: {type: string}
+        rentable_sf: {type: number, description: Premises rentable SF}
+        total_building_sf: {type: number}
+        building_class: {type: string, description: "A, B, C, Other"}
+    Financials:
+      type: object
+      properties:
+        rate_per_sf: {type: number}
+        rent_type: {type: string, description: "G, FSG, MG, NNN, MN, Other"}
+        effective_rate: {type: number}
+        monthly_rent: {type: number}
+        annual_rent: {type: number}
+        security_deposit: {type: number}
+        free_rent: {type: string}
+        ti_allowance: {type: string}
+        parking_ratio: {type: string}
+        total_lease_consideration: {type: number}
+    Transaction:
+      type: object
+      properties:
+        transaction_type: {type: string, description: "Sale, Lease, Franchise, Consulting/Referral, Other"}
+        property_type: {type: string, description: "Office, Retail, Industrial, Land, Apartment, Other"}
+        lease_type: {type: string, description: "Direct, Sublease, Renewal, Expansion, Other"}
+        lee_exclusive: {type: string, description: "Yes or No"}
+        landlord: {$ref: "#/components/schemas/Party"}
+        tenant: {$ref: "#/components/schemas/Party"}
+        property: {$ref: "#/components/schemas/PropertyInfo"}
+        financials: {$ref: "#/components/schemas/Financials"}
+        lease_commencement: {type: string}
+        lease_expiration: {type: string}
+        lease_term_months: {type: integer}
+        listing_broker: {$ref: "#/components/schemas/Broker"}
+        procuring_broker: {$ref: "#/components/schemas/Broker"}
+        total_commission_percent: {type: number}
+        total_commission_amount: {type: number}
+        notes: {type: string}
+    FillRequest:
+      type: object
+      required: [transaction]
+      properties:
+        transaction: {$ref: "#/components/schemas/Transaction"}
+        template: {type: string}
+        flatten: {type: boolean, default: true}
+    FillResponse:
+      type: object
+      properties:
+        download_url: {type: string}
+        filename: {type: string}
+        expires_in_minutes: {type: integer}
+        fields_filled: {type: integer}
+        fields_skipped: {type: array, items: {type: string}}

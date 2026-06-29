@@ -1,0 +1,63 @@
+{
+  "_meta": {
+    "template": "commission_worksheet.pdf",
+    "note": "Mapping for the LA North/Ventura Commission Worksheet. Field ids verified against the real template by position. Seller/(Sub)Lessor = Landlord side; Buyer/(Sub)Lessee = Tenant side. Combo fields accept only their listed options.",
+    "checkbox_fields": {"Check Box1": "NEW (value /Yes)", "Check Box2": "CHANGE (value /Yes)"}
+  },
+  "_constants": {
+    "Check Box1": "/Yes"
+  },
+  "fields": {
+    "transaction_type": "Combo Box4",
+    "property_type": "Combo Box5",
+    "lease_type": "Combo Box43",
+    "lee_exclusive": "Combo Box1",
+
+    "listing_broker.name": "Text4",
+    "listing_broker.company": "Text5",
+    "procuring_broker.name": "Text6",
+    "procuring_broker.company": "Text7",
+
+    "landlord.company": "Text8",
+    "landlord.phone": "Text9",
+    "landlord.prefix": "Combo Box10",
+    "landlord.first_name": "Text11",
+    "landlord.last_name": "Text12",
+    "landlord.address": "Text13",
+    "landlord.suite": "Text17",
+    "landlord.city": "Text18",
+    "landlord.state": "Text19",
+    "landlord.zip": "Text20",
+
+    "tenant.company": "Text21",
+    "tenant.phone": "Text22",
+    "tenant.prefix": "Combo Box23",
+    "tenant.first_name": "Text24",
+    "tenant.last_name": "Text25",
+    "tenant.address": "Text26",
+    "tenant.suite": "Text30",
+    "tenant.city": "Text31",
+    "tenant.state": "Tex32",
+    "tenant.zip": "Text33",
+
+    "property.name": "Text34",
+    "property.total_building_sf": {"field": "Text260", "format": "number"},
+    "property.building_class": "Combo Box2",
+    "property.address": "Text35",
+    "property.suite": "Text39",
+    "property.city": "Text40",
+    "property.state": "Text41",
+    "property.zip": "Text42",
+
+    "lease_commencement": "Text44",
+    "lease_term_months": "Text45",
+    "lease_expiration": "Text46",
+    "financials.rate_per_sf": {"field": "Text47", "format": "currency"},
+    "property.rentable_sf": {"field": "Text48", "format": "number"},
+    "financials.rent_type": "Combo Box49",
+    "financials.effective_rate": {"field": "Text50", "format": "currency"},
+    "financials.ti_allowance": "Text51",
+    "financials.free_rent": "Text52",
+    "financials.parking_ratio": "Text54"
+  }
+}
